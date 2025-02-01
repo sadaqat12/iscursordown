@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Is Cursor Down?</title>
+  <style>
+    /* Basic styling for a fun, simple look */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f2f2f2;
+      color: #333;
+      padding: 20px;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    .btn-up { background-color: #4caf50; color: white; }
+    .btn-down { background-color: #f44336; color: white; }
+    .btn:hover { opacity: 0.8; }
+    #report-form {
+      margin: 20px auto;
+      max-width: 400px;
+      text-align: left;
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      margin-top: 10px;
+      padding: 10px;
+    }
+    #stats {
+      margin-top: 20px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 5px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Is Cursor Down?</h1>
+  <p>Help the community by reporting if Cursor AI is down or running smoothly.</p>
+
+  <div id="report-form">
+    <p>How was your experience?</p>
+    <!-- Buttons to report status -->
+    <button class="btn btn-up" onclick="submitReport('up')">Cursor Up</button>
+    <button class="btn btn-down" onclick="submitReport('down')">Cursor Down</button>
+    <!-- Optional comment box -->
+    <div style="margin-top:10px;">
+      <label for="comment">Comments (optional):</label>
+      <textarea id="comment" placeholder="What happened?"></textarea>
+    </div>
+  </div>
+
+  <div id="stats">
+    <h2>Community Feedback</h2>
+    <div id="results">
+      <p>Loading stats...</p>
+    </div>
+  </div>
+
+  
+  
+  <script>
+        // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics.js";
+    // Add Firebase products that you want to use
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+        apiKey: "AIzaSyBN7RQ0ndgMfd-pudErAbTt93cH9PyfnEc",
+        authDomain: "iscursordown.firebaseapp.com",
+        projectId: "iscursordown",
+        storageBucket: "iscursordown.firebasestorage.app",
+        messagingSenderId: "512229393468",
+        appId: "1:512229393468:web:392c8b29a8e7dcc17daf39",
+        measurementId: "G-HTVGQ2YD1D"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    // Function to submit a report
+    async function submitReport(status) {
+      // Get the optional comment
+      const comment = document.getElementById('comment').value;
+      // Create a new report object with a timestamp
+      const report = {
+        status: status, // 'up' or 'down'
+        comment: comment || '',
+        timestamp: Date.now()
+      };
+
+      try {
+        await db.collection('reports').add(report);
+        alert('Thank you for your feedback!');
+        // Clear the input field for next submission
+        document.getElementById('comment').value = '';
+        // Refresh stats after a new report
+        loadStats();
+      } catch (err) {
+        console.error('Error submitting report: ', err);
+        alert('There was an error submitting your report. Please try again later.');
+      }
+    }
+
+    // Function to load and display status statistics
+    async function loadStats() {
+      try {
+        const snapshot = await db.collection('reports').get();
+        let upCount = 0;
+        let downCount = 0;
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if(data.status === 'up') upCount++;
+          else if(data.status === 'down') downCount++;
+        });
+        // Create a nice display for the stats
+        let resultsHtml = `
+          <p><strong>Cursor Up:</strong> ${upCount}</p>
+          <p><strong>Cursor Down:</strong> ${downCount}</p>
+        `;
+        // Optionally, show overall status
+        if(downCount > upCount) {
+          resultsHtml += `<h3 style="color:#f44336;">Looks like Cursor AI is experiencing issues!</h3>`;
+        } else {
+          resultsHtml += `<h3 style="color:#4caf50;">Cursor AI looks to be running fine!</h3>`;
+        }
+        document.getElementById('results').innerHTML = resultsHtml;
+      } catch (err) {
+        console.error('Error loading stats: ', err);
+        document.getElementById('results').innerHTML = '<p>Error loading stats.</p>';
+      }
+    }
+
+    // Load stats when the page loads
+    window.onload = loadStats;
+  </script>
+</body>
+</html> 
