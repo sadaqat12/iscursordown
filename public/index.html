@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+    <title>Cursor Status</title>
 
     <!-- update the version number as needed -->
     <script defer src="/__/firebase/11.2.0/firebase-app-compat.js"></script>
@@ -25,46 +25,55 @@
 
     <style media="screen">
       body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
       #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
       @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
         body { border-top: 16px solid #ffa100; }
       }
+      
+      /* New styles for our status page */
+      .status-up { color: green; font-weight: bold; }
+      .status-down { color: red; font-weight: bold; }
+      #app {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 16px;
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 8px;
+      }
+      #currentStatus { font-size: 20px; margin-bottom: 16px; }
+      #reportForm { margin: 20px 0; }
+      #reportForm label { margin-right: 10px; }
+      #reportsList { list-style: none; padding: 0; }
+      #reportsList li { padding: 6px 0; border-bottom: 1px solid #ddd; }
     </style>
   </head>
   <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+    <!-- New application container -->
+    <div id="app">
+      <h1>Cursor Status</h1>
+      <div id="currentStatus">Current Status: <span id="statusIndicator">Unknown</span></div>
+      
+      <form id="reportForm">
+        <p>Report current status:</p>
+        <label>
+          <input type="radio" name="status" value="down"> Down
+        </label>
+        <label>
+          <input type="radio" name="status" value="up"> Up
+        </label>
+        <button type="submit">Submit Report</button>
+      </form>
+      
+      <h2>Recent Reports</h2>
+      <ul id="reportsList"></ul>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+    
+    <p id="load">Loading Firebase SDK&hellip;</p>
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-
         try {
           let app = firebase.app();
           let features = [
@@ -83,6 +92,69 @@
           console.error(e);
           loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
         }
+
+        // Elements for status indicator, report form, and reports list UI
+        const statusIndicator = document.getElementById('statusIndicator');
+        const reportForm = document.getElementById('reportForm');
+        const reportsList = document.getElementById('reportsList');
+        const reportsRef = firebase.database().ref('reports');
+
+        // Listen for the most recent report to update our current status display
+        reportsRef.limitToLast(1).on('child_added', snapshot => {
+          const data = snapshot.val();
+          updateStatusDisplay(data.status);
+        });
+
+        // Listen for last 10 reports and display them
+        reportsRef.limitToLast(10).on('value', snapshot => {
+          const reports = [];
+          snapshot.forEach(child => {
+            reports.push(child.val());
+          });
+          // Reverse the array so the newest report is shown first
+          reports.reverse();
+          reportsList.innerHTML = '';
+          reports.forEach(report => {
+            const li = document.createElement('li');
+            const date = new Date(report.timestamp);
+            li.textContent = `${date.toLocaleString()}: Status reported as '${report.status}'`;
+            reportsList.appendChild(li);
+          });
+        });
+
+        // Function that updates the UI for the current status
+        function updateStatusDisplay(status) {
+          statusIndicator.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+          if (status === 'up') {
+            statusIndicator.className = 'status-up';
+          } else if (status === 'down') {
+            statusIndicator.className = 'status-down';
+          } else {
+            statusIndicator.className = '';
+          }
+        }
+
+        // Handle form submission to report a status
+        reportForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData(reportForm);
+          const status = formData.get('status');
+          if (!status) {
+            alert('Please select a status.');
+            return;
+          }
+          const newReport = {
+            status: status,
+            timestamp: Date.now()
+          };
+          reportsRef.push(newReport, function(error) {
+            if (error) {
+              alert('Error reporting status: ' + error);
+            } else {
+              reportForm.reset();
+            }
+          });
+        });
       });
     </script>
   </body>
