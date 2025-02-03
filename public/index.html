@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600&display=swap" rel="stylesheet">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- update the version number as needed -->
     <script defer src="/__/firebase/11.2.0/firebase-app-compat.js"></script>
@@ -55,7 +57,7 @@
       /* Updated styles for our status page container */
       #app {
         max-width: 600px;
-        margin: 40px auto;
+        margin: 20px auto;
         padding: 24px;
         background: rgba(255, 255, 255, 0.8);
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -89,32 +91,84 @@
 
       /* Updated report form styling */
       #reportForm { margin: 20px 0; }
-      #reportForm p { margin-bottom: 10px; }
-      #reportForm label { margin-right: 10px; font-size: 16px; }
-      #reportForm input[type="radio"] { margin-right: 6px; }
-
-      /* Updated button styles for a modern look */
+      #reportForm p { 
+        margin-bottom: 0;
+        white-space: nowrap;
+      }
+      #reportForm .btn-group {
+        margin-right: 10px;
+      }
       #reportForm button {
         background: linear-gradient(45deg, #6a11cb, #2575fc);
         color: #fff;
-        padding: 10px 20px;
-        font-size: 16px;
         border: none;
         border-radius: 5px;
         cursor: pointer;
         transition: background 0.3s ease, transform 0.2s ease;
-      }
-      #reportForm button:hover {
-        background: linear-gradient(45deg, #2575fc, #6a11cb);
-        transform: scale(1.05);
+        white-space: nowrap;
       }
 
-      /* Updated recent reports list */
-      #reportsList { list-style: none; padding: 0; }
+      /* Responsive form layout */
+      @media (max-width: 768px) {
+        #reportForm .d-flex {
+          flex-direction: column;
+          align-items: stretch !important;
+          gap: 1rem !important;
+        }
+        
+        #reportForm p {
+          text-align: center;
+          margin-bottom: 0.5rem;
+        }
+
+        #reportForm .btn-group {
+          margin-right: 0;
+          width: 100%;
+        }
+
+        #reportForm .btn-group label {
+          flex: 1;
+        }
+
+        #reportForm button[type="submit"] {
+          width: 100%;
+          padding: 0.75rem;
+        }
+      }
+
+      /* Updated recent reports list with scrollable container */
+      #reportsList { 
+        list-style: none; 
+        padding: 0;
+        max-height: 200px; /* Reduced from 300px to 200px */
+        overflow-y: auto;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.7);
+      }
       #reportsList li { 
-        padding: 10px 8px; 
+        padding: 8px 16px; /* Reduced vertical padding from 12px to 8px */
         border-bottom: 1px solid #eee; 
         font-size: 14px;
+      }
+      #reportsList li:last-child {
+        border-bottom: none;
+      }
+
+      /* Custom scrollbar styling for modern browsers */
+      #reportsList::-webkit-scrollbar {
+        width: 8px;
+      }
+      #reportsList::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 0 8px 8px 0;
+      }
+      #reportsList::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+      }
+      #reportsList::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.3);
       }
 
       /* Keyframes for animated, multi-color background gradient */
@@ -132,6 +186,22 @@
           background: linear-gradient(45deg, #ff9a9e, #fad0c4);
         }
       }
+
+      /* Add styles for the graph container */
+      #graphContainer {
+        margin: 20px 0;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        height: 200px; /* Fixed height for the container */
+      }
+
+      /* Also update the Bootstrap container class margin */
+      .my-5 {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+      }
     </style>
   </head>
   <body>
@@ -144,29 +214,34 @@
           <div id="currentStatus" class="mb-4">Current Status: <span id="statusIndicator">Unknown</span></div>
           
           <form id="reportForm" class="mb-4">
-            <p class="mb-2">Report current status:</p>
-            <div class="btn-group" role="group" aria-label="Report current status">
-              <input type="radio" class="btn-check" name="status" value="down" id="statusDown" autocomplete="off">
-              <label class="btn btn-outline-danger" for="statusDown">Down</label>
+            <div class="d-flex align-items-center gap-3">
+              <p class="mb-0">Report current status:</p>
+              <div class="btn-group" role="group" aria-label="Report current status">
+                <input type="radio" class="btn-check" name="status" value="down" id="statusDown" autocomplete="off">
+                <label class="btn btn-outline-danger" for="statusDown">Down</label>
 
-              <input type="radio" class="btn-check" name="status" value="up" id="statusUp" autocomplete="off">
-              <label class="btn btn-outline-success" for="statusUp">Up</label>
+                <input type="radio" class="btn-check" name="status" value="up" id="statusUp" autocomplete="off">
+                <label class="btn btn-outline-success" for="statusUp">Up</label>
+              </div>
+              <button type="submit" class="btn btn-success">Submit Report</button>
             </div>
-            <br>
-            <button type="submit" class="btn btn-success mt-3">Submit Report</button>
           </form>
           
           <h2 class="h4">Recent Reports</h2>
+          <!-- Add graph container here -->
+          <div id="graphContainer">
+            <canvas id="statusGraph"></canvas>
+          </div>
           <ul id="reportsList" class="list-group"></ul>
           <p class="small text-muted mt-4 text-center">
-            Note: This is a community-maintained status page created to help Cursor users share editor status updates. Not affiliated with the Cursor team. Created by 
+            Note: This is a community-maintained status page created to help Cursor users share editor status updates. Not affiliated with the Cursor team. For the official status page, visit <a href="https://status.cursor.com/" target="_blank">status.cursor.com</a>. Created by 
             <a href="https://github.com/sadaqat12" target="_blank">sadaqat12</a>.
           </p>
         </div>
       </div>
     </div>
     
-    <p id="load">Loading Firebase SDK&hellip;</p>
+    <!-- <p id="load">Loading Firebase SDK&hellip;</p> -->
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -184,7 +259,7 @@
             'remoteConfig',
             'performance',
           ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
+          // loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
         } catch (e) {
           console.error(e);
           loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
@@ -204,20 +279,212 @@
           });
         });
 
-        // Listen for last 10 reports and display them using Firestore
-        reportsRef.orderBy('timestamp', 'desc').limit(10).onSnapshot(snapshot => {
-          const reports = [];
-          snapshot.forEach(doc => {
-            reports.push(doc.data());
+        // Initialize chart
+        let statusChart;
+        
+        // Function to create or update the chart
+        function updateChart(reports) {
+          const ctx = document.getElementById('statusGraph').getContext('2d');
+          
+          // Create array of last 7 days x 24 hours = 168 hours
+          const hours = [];
+          const hourlyStatus = new Array(168); // Pre-initialize the array
+          const now = new Date();
+          now.setMinutes(0, 0, 0); // Round to current hour
+          
+          // First create the hours array
+          for (let i = 167; i >= 0; i--) {
+            const date = new Date(now);
+            date.setHours(date.getHours() - i);
+            hours[167 - i] = date;
+          }
+
+          // Then process the status for each hour
+          let lastKnownStatus = 'no-data';
+          
+          // Sort reports chronologically
+          const sortedReports = [...reports].sort((a, b) => a.timestamp - b.timestamp);
+          
+          // Get initial status from first report
+          if (sortedReports.length > 0) {
+            lastKnownStatus = sortedReports[0].status;
+          }
+
+          // Process each hour
+          for (let i = 0; i < hours.length; i++) {
+            const hour = hours[i];
+            const nextHour = new Date(hour);
+            nextHour.setHours(nextHour.getHours() + 1);
+            
+            // Find any status changes within this hour
+            const hourReports = sortedReports.filter(r => {
+              const reportDate = new Date(r.timestamp);
+              return reportDate >= hour && reportDate < nextHour;
+            });
+
+            if (hourReports.length > 0) {
+              // If there are reports in this hour, use the last report's status
+              const latestReport = hourReports[hourReports.length - 1];
+              lastKnownStatus = latestReport.status;
+              
+              // But if any report was 'down', mark the hour as down
+              const hasDownReport = hourReports.some(r => r.status === 'down');
+              hourlyStatus[i] = hasDownReport ? 'down' : lastKnownStatus;
+            } else {
+              // For hours before first report, use no-data
+              const firstReportTime = sortedReports.length > 0 ? 
+                new Date(sortedReports[0].timestamp) : null;
+              
+              if (!firstReportTime || hour < firstReportTime) {
+                hourlyStatus[i] = 'no-data';
+              } else {
+                // Otherwise use the last known status
+                hourlyStatus[i] = lastKnownStatus;
+              }
+            }
+          }
+
+          if (statusChart) {
+            statusChart.destroy();
+          }
+          
+          statusChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: hours.map(d => {
+                const isStartOfDay = d.getHours() === 0;
+                return isStartOfDay ? d.toLocaleDateString('en-US', { 
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
+                }) : '';
+              }),
+              datasets: [{
+                label: 'Hourly Status',
+                data: hourlyStatus.map(() => 1), // All bars same height
+                backgroundColor: hourlyStatus.map(status => {
+                  switch(status) {
+                    case 'up': return 'rgb(40, 167, 69)';     // Green
+                    case 'down': return 'rgb(220, 53, 69)';   // Red
+                    default: return 'rgb(173, 181, 189)';     // Gray
+                  }
+                }),
+                borderWidth: 0,
+                borderRadius: 0,
+                barPercentage: 1,
+                categoryPercentage: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              interaction: {
+                intersect: true,
+                mode: 'index'
+              },
+              scales: {
+                y: {
+                  display: false,
+                  min: 0,
+                  max: 1
+                },
+                x: {
+                  grid: {
+                    display: false,
+                    drawBorder: false
+                  },
+                  ticks: {
+                    maxRotation: 0,
+                    minRotation: 0,
+                    font: {
+                      size: 11
+                    },
+                    color: '#666'
+                  }
+                }
+              },
+              plugins: {
+                title: {
+                  display: true,
+                  text: 'Status over the last 7 days',
+                  font: {
+                    size: 16,
+                    weight: 'bold'
+                  },
+                  padding: {
+                    top: 10,
+                    bottom: 20
+                  }
+                },
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  titleColor: '#333',
+                  bodyColor: '#333',
+                  borderColor: 'rgba(0, 0, 0, 0.1)',
+                  borderWidth: 1,
+                  padding: 10,
+                  displayColors: false,
+                  callbacks: {
+                    title: function(tooltipItems) {
+                      const date = hours[tooltipItems[0].dataIndex];
+                      return date.toLocaleString('en-US', { 
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: 'numeric'
+                      });
+                    },
+                    label: function(context) {
+                      const status = hourlyStatus[context.dataIndex];
+                      switch(status) {
+                        case 'up': return '✅ No incidents reported';
+                        case 'down': return '❌ Incidents reported';
+                        default: return '⚫ No data available';
+                      }
+                    }
+                  }
+                }
+              }
+            }
           });
-          reportsList.innerHTML = '';
-          reports.forEach(report => {
-            const li = document.createElement('li');
-            const date = new Date(report.timestamp);
-            li.textContent = `${date.toLocaleString()}: Status reported as '${report.status}'`;
-            reportsList.appendChild(li);
+        }
+
+        // Update the Firestore listener to fetch 7 days of data
+        function setupRealtimeUpdates() {
+          const query = reportsRef.orderBy('timestamp', 'desc')
+            .where('timestamp', '>', Date.now() - (7 * 24 * 60 * 60 * 1000));
+            
+          return query.onSnapshot(snapshot => {
+            const reports = [];
+            snapshot.forEach(doc => {
+              reports.push(doc.data());
+            });
+            reportsList.innerHTML = '';
+            reports.slice(0, 10).forEach(report => {
+              const li = document.createElement('li');
+              const date = new Date(report.timestamp);
+              li.textContent = `${date.toLocaleString()}: Status reported as '${report.status}'`;
+              reportsList.appendChild(li);
+            });
+            
+            updateChart(reports);
           });
-        });
+        }
+
+        // Set up initial listener
+        let unsubscribe = setupRealtimeUpdates();
+
+        // Refresh the query every hour to keep the time window current
+        setInterval(() => {
+          unsubscribe(); // Clean up old listener
+          unsubscribe = setupRealtimeUpdates(); // Set up new listener with current time
+        }, 60 * 60 * 1000); // Every hour
 
         // Function that updates the UI for the current status
         function updateStatusDisplay(status) {
