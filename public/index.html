@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cursor Status</title>
 
+    <!-- Google Font for modern typography -->
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <!-- update the version number as needed -->
     <script defer src="/__/firebase/11.2.0/firebase-app-compat.js"></script>
     <!-- include only the Firebase features as you need -->
@@ -24,49 +29,141 @@
     <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
     <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      /* Update body styling with a modern animated, multi-color gradient background and new font */
+      body { 
+        margin: 0; 
+        padding: 0; 
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+        color: #333;
+        animation: gradientBG 15s ease infinite;
+      }
+
+      /* Loader style updated */
+      #load { 
+        color: rgba(0,0,0,0.6); 
+        text-align: center; 
+        font-size: 13px; 
+        margin-top: 20px;
+      }
+
+      /* Responsive border removed in favor of padding adjustments for modern design */
       @media (max-width: 600px) {
-        body { border-top: 16px solid #ffa100; }
+        body { padding: 10px; }
       }
       
-      /* New styles for our status page */
-      .status-up { color: green; font-weight: bold; }
-      .status-down { color: red; font-weight: bold; }
+      /* Updated styles for our status page container */
       #app {
         max-width: 600px;
-        margin: 20px auto;
-        padding: 16px;
-        background: #fff;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-radius: 8px;
+        margin: 40px auto;
+        padding: 24px;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-radius: 10px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.3);
       }
-      #currentStatus { font-size: 20px; margin-bottom: 16px; }
+      
+      /* Hover effect for a subtle lift and enhanced shadow */
+      #app:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+      }
+
+      /* Updated header and status text */
+      h1 {
+        margin-top: 0;
+        font-weight: 500;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.15);
+      }
+
+      #currentStatus { 
+        font-size: 24px; 
+        margin-bottom: 24px; 
+      }
+      
+      /* Styling for the status indicator */
+      .status-up { color: green; font-weight: bold; }
+      .status-down { color: red; font-weight: bold; }
+
+      /* Updated report form styling */
       #reportForm { margin: 20px 0; }
-      #reportForm label { margin-right: 10px; }
+      #reportForm p { margin-bottom: 10px; }
+      #reportForm label { margin-right: 10px; font-size: 16px; }
+      #reportForm input[type="radio"] { margin-right: 6px; }
+
+      /* Updated button styles for a modern look */
+      #reportForm button {
+        background: linear-gradient(45deg, #6a11cb, #2575fc);
+        color: #fff;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s ease;
+      }
+      #reportForm button:hover {
+        background: linear-gradient(45deg, #2575fc, #6a11cb);
+        transform: scale(1.05);
+      }
+
+      /* Updated recent reports list */
       #reportsList { list-style: none; padding: 0; }
-      #reportsList li { padding: 6px 0; border-bottom: 1px solid #ddd; }
+      #reportsList li { 
+        padding: 10px 8px; 
+        border-bottom: 1px solid #eee; 
+        font-size: 14px;
+      }
+
+      /* Keyframes for animated, multi-color background gradient */
+      @keyframes gradientBG {
+        0% {
+          background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+        }
+        33% {
+          background: linear-gradient(45deg, #a1c4fd, #c2e9fb);
+        }
+        66% {
+          background: linear-gradient(45deg, #fbc2eb, #a6c1ee);
+        }
+        100% {
+          background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+        }
+      }
     </style>
   </head>
   <body>
-    <!-- New application container -->
-    <div id="app">
-      <h1>Cursor Status</h1>
-      <div id="currentStatus">Current Status: <span id="statusIndicator">Unknown</span></div>
-      
-      <form id="reportForm">
-        <p>Report current status:</p>
-        <label>
-          <input type="radio" name="status" value="down"> Down
-        </label>
-        <label>
-          <input type="radio" name="status" value="up"> Up
-        </label>
-        <button type="submit">Submit Report</button>
-      </form>
-      
-      <h2>Recent Reports</h2>
-      <ul id="reportsList"></ul>
+    <!-- Bootstrap container -->
+    <div id="app" class="container my-5">
+      <div class="card shadow">
+        <div class="card-body">
+          <h1 class="card-title">Cursor AI Status</h1>
+          <p class="mb-3">Welcome to the community-driven Cursor AI status page! This platform allows Cursor AI users to share and check the current operational status of the editor. Help fellow community members by reporting whether the editor is working (up) or experiencing issues (down) for you.</p>
+          <div id="currentStatus" class="mb-4">Current Status: <span id="statusIndicator">Unknown</span></div>
+          
+          <form id="reportForm" class="mb-4">
+            <p class="mb-2">Report current status:</p>
+            <div class="btn-group" role="group" aria-label="Report current status">
+              <input type="radio" class="btn-check" name="status" value="down" id="statusDown" autocomplete="off">
+              <label class="btn btn-outline-danger" for="statusDown">Down</label>
+
+              <input type="radio" class="btn-check" name="status" value="up" id="statusUp" autocomplete="off">
+              <label class="btn btn-outline-success" for="statusUp">Up</label>
+            </div>
+            <br>
+            <button type="submit" class="btn btn-success mt-3">Submit Report</button>
+          </form>
+          
+          <h2 class="h4">Recent Reports</h2>
+          <ul id="reportsList" class="list-group"></ul>
+          <p class="small text-muted mt-4 text-center">
+            Note: This is a community-maintained status page created to help Cursor users share editor status updates. Not affiliated with the Cursor team. Created by 
+            <a href="https://github.com/sadaqat12" target="_blank">sadaqat12</a>.
+          </p>
+        </div>
+      </div>
     </div>
     
     <p id="load">Loading Firebase SDK&hellip;</p>
@@ -97,22 +194,22 @@
         const statusIndicator = document.getElementById('statusIndicator');
         const reportForm = document.getElementById('reportForm');
         const reportsList = document.getElementById('reportsList');
-        const reportsRef = firebase.database().ref('reports');
+        const reportsRef = firebase.firestore().collection('reports');
 
-        // Listen for the most recent report to update our current status display
-        reportsRef.limitToLast(1).on('child_added', snapshot => {
-          const data = snapshot.val();
-          updateStatusDisplay(data.status);
+        // Listen for the most recent report to update our current status display using Firestore
+        reportsRef.orderBy('timestamp', 'desc').limit(1).onSnapshot(snapshot => {
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            updateStatusDisplay(data.status);
+          });
         });
 
-        // Listen for last 10 reports and display them
-        reportsRef.limitToLast(10).on('value', snapshot => {
+        // Listen for last 10 reports and display them using Firestore
+        reportsRef.orderBy('timestamp', 'desc').limit(10).onSnapshot(snapshot => {
           const reports = [];
-          snapshot.forEach(child => {
-            reports.push(child.val());
+          snapshot.forEach(doc => {
+            reports.push(doc.data());
           });
-          // Reverse the array so the newest report is shown first
-          reports.reverse();
           reportsList.innerHTML = '';
           reports.forEach(report => {
             const li = document.createElement('li');
@@ -137,8 +234,10 @@
         // Handle form submission to report a status
         reportForm.addEventListener('submit', function(e) {
           e.preventDefault();
+          console.log("Submit event triggered.");
           const formData = new FormData(reportForm);
           const status = formData.get('status');
+          console.log("Selected status:", status);
           if (!status) {
             alert('Please select a status.');
             return;
@@ -147,13 +246,16 @@
             status: status,
             timestamp: Date.now()
           };
-          reportsRef.push(newReport, function(error) {
-            if (error) {
-              alert('Error reporting status: ' + error);
-            } else {
+          console.log("Adding newReport:", newReport);
+          reportsRef.add(newReport)
+            .then(() => {
               reportForm.reset();
-            }
-          });
+              console.log("Report submitted successfully, form reset.");
+            })
+            .catch((error) => {
+              alert('Error reporting status: ' + error);
+              console.error("Error adding report:", error);
+            });
         });
       });
     </script>
