@@ -248,6 +248,12 @@
         const loadEl = document.querySelector('#load');
         try {
           let app = firebase.app();
+          // Initialize Analytics specifically
+          const analytics = firebase.analytics();
+          
+          // Log page view event
+          analytics.logEvent('page_view');
+
           let features = [
             'auth', 
             'database', 
@@ -498,7 +504,7 @@
           }
         }
 
-        // Handle form submission to report a status
+        // Track status reports
         reportForm.addEventListener('submit', function(e) {
           e.preventDefault();
           console.log("Submit event triggered.");
@@ -513,6 +519,13 @@
             status: status,
             timestamp: Date.now()
           };
+          
+          // Log status report event
+          analytics.logEvent('status_report', {
+            status: status,
+            timestamp: Date.now()
+          });
+
           console.log("Adding newReport:", newReport);
           reportsRef.add(newReport)
             .then(() => {
